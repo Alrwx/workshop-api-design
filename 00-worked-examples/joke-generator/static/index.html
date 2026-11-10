@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gator Joke Generator</title>
+<style>
+  :root { --navy: #14213d; --orange: #fa6a1e; --cream: #f7f5f0; --muted: #4a5568; --blue: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+         background: var(--cream); color: var(--navy); display: grid; place-items: center; padding: 24px; }
+  main { width: 100%; max-width: 640px; }
+  h1 { font-size: 2.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  select, button { font: inherit; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--navy); }
+  select { background: white; }
+  button { background: var(--orange); color: white; border-color: var(--orange); font-weight: 700; cursor: pointer; }
+  button.secondary { background: white; color: var(--navy); border-color: var(--navy); }
+  button:disabled { opacity: .5; cursor: default; }
+  .card { background: white; border-radius: 20px; padding: 28px; box-shadow: 0 6px 24px rgba(20,33,61,.08); min-height: 180px; }
+  .setup { font-size: 1.5rem; font-weight: 700; margin: 0 0 16px; }
+  .punchline { font-size: 1.3rem; color: var(--blue); margin: 16px 0 0; }
+  .tag { display: inline-block; background: #ffebdd; color: #9a3412; border-radius: 999px; padding: 4px 12px; font-size: .85rem; font-weight: 700; }
+  .error { background: #fff1f0; border: 2px solid #f5c2bd; color: #8a1c13; }
+  .error code { background: #ffe0dc; padding: 2px 6px; border-radius: 6px; }
+  details { margin-top: 20px; }
+  summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+  pre { background: var(--navy); color: var(--cream); padding: 16px; border-radius: 12px; overflow-x: auto; font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🐊 Gator Joke Generator</h1>
+  <p class="sub">The frontend is done. The API is up to you.</p>
+
+  <div class="controls">
+    <select id="category" aria-label="Category">
+      <option value="">Any category</option>
+    </select>
+    <button id="get-joke">Tell me a joke</button>
+  </div>
+
+  <div id="card" class="card">
+    <p class="sub" style="margin:0">Click the button to call <code>GET /api/joke</code>.</p>
+  </div>
+
+  <details open>
+    <summary>What just happened? (request and response)</summary>
+    <pre id="log">Nothing yet.</pre>
+  </details>
+</main>
+
+<script>
+  const card = document.getElementById("card");
+  const log = document.getElementById("log");
+  const button = document.getElementById("get-joke");
+  const select = document.getElementById("category");
+
+  // Load categories if the API has that endpoint (it's a bonus, so it might not yet).
+  fetch("/api/categories")
+    .then((res) => (res.ok ? res.json() : []))
+    .then((categories) => {
+      for (const c of categories) {
+        const option = document.createElement("option");
+        option.value = c;
+        option.textContent = c;
+        select.appendChild(option);
+      }
+    })
+    .catch(() => {});
+
+  button.addEventListener("click", getJoke);
+
+  async function getJoke() {
+    const url = select.value ? `/api/joke?category=${encodeURIComponent(select.value)}` : "/api/joke";
+    button.disabled = true;
+    try {
+      // This is the API call. fetch() is JavaScript's version of requests.get().
+      const res = await fetch(url);
+      const text = await res.text();
+      log.textContent = `GET ${url}\n→ ${res.status} ${res.statusText}\n\n${text.slice(0, 500)}`;
+
+      if (!res.ok) {
+        showError(res.status, url);
+        return;
+      }
+      let joke;
+      try {
+        joke = JSON.parse(text);
+      } catch {
+        showError("not JSON", url);
+        return;
+      }
+      showJoke(joke);
+    } catch (err) {
+      log.textContent = `GET ${url}\n→ network error: ${err.message}`;
+      showError("no connection", url);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function showJoke(joke) {
+    card.className = "card";
+    card.innerHTML = "";
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = joke.category ?? "joke";
+    const setup = document.createElement("p");
+    setup.className = "setup";
+    setup.textContent = joke.setup ?? "(the API didn't send a setup)";
+    const reveal = document.createElement("button");
+    reveal.className = "secondary";
+    reveal.textContent = "Reveal punchline";
+    reveal.addEventListener("click", () => {
+      const p = document.createElement("p");
+      p.className = "punchline";
+      p.textContent = joke.punchline ?? "(the API didn't send a punchline)";
+      reveal.replaceWith(p);
+    });
+    card.append(tag, setup, reveal);
+  }
+
+  function showError(status, url) {
+    card.className = "card error";
+    const hints = {
+      404: `The server has no route for <code>${url.split("?")[0]}</code> yet (or no jokes matched). Time to write it in <code>app.py</code>!`,
+      500: "The server crashed. Check the terminal running Flask for the error.",
+      "not JSON": "The server answered, but not with JSON. Did you return <code>jsonify(...)</code>?",
+      "no connection": "Couldn't reach the server. Is <code>python app.py</code> still running?",
+    };
+    card.innerHTML = `<p class="setup">The API said: ${status}</p><p>${hints[status] ?? "Something unexpected happened. Check the log below."}</p>`;
+  }
+</script>
+</body>
+</html>

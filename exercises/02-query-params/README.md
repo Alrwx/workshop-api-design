@@ -59,5 +59,5 @@ The two lists line up: item 0 of `time` goes with item 0 of `precipitation_proba
 
 ## Bonus
 
-- Take the city as a command line argument and look up its coordinates with the geocoding API from the working example.
+- Take the city as a command line argument and look up its coordinates with the geocoding API from `00-worked-examples/weather-script`.
 - Add `temperature_2m` to `hourly` and print it next to the rain chance.

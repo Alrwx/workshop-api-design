@@ -17,7 +17,7 @@ pip install -r requirements.txt
 Check it works:
 
 ```bash
-python 00-working-example/gator_forecast.py
+python 00-worked-examples/weather-script/gator_forecast.py
 ```
 
 ## What is an API?
@@ -87,11 +87,12 @@ curl -i https://pokeapi.co/api/v2/pokemon/notapokemon   # -i shows the status co
 
 ## The workshop
 
-Start with the **working example**, then do the exercises in order. Each exercise has a `README.md` with the goal, a `starter.py` with `TODO`s for you to fill in, and a `solution.py` if you get stuck. No peeking for at least 5 minutes!
+Start with the two **worked examples**, then do the exercises in order. Each exercise has a `README.md` with the goal, a `starter.py` with `TODO`s for you to fill in, and a `solution.py` if you get stuck. No peeking for at least 5 minutes!
 
 | | Folder | You'll learn | API used | Key needed? |
 | --- | --- | --- | --- | --- |
-| ⭐ | [`00-working-example`](00-working-example) | What a full API program looks like | Open-Meteo | No |
+| ⭐ | [`00-worked-examples/joke-generator`](00-worked-examples/joke-generator) | Building an API, live with the frontend already done | Your own (Flask) | No |
+| ⭐ | [`00-worked-examples/class-calendar`](00-worked-examples/class-calendar) | Using an API from a server to fill a web page | Google Calendar | Demo mode without one |
 | 1 | [`01-first-request`](exercises/01-first-request) | GET, status codes, reading JSON | PokéAPI | No |
 | 2 | [`02-query-params`](exercises/02-query-params) | Query parameters, nested JSON | Open-Meteo | No |
 | 3 | [`03-sending-data`](exercises/03-sending-data) | POST, request bodies, headers | JSONPlaceholder | No |
@@ -106,12 +107,11 @@ Exercise 5 is the one we'll use on the ACM website. Setting up a Google Cloud AP
 | --- | --- |
 | 0:00 | What is an API? (whiteboard) |
 | 0:15 | Try it in the browser and with `curl` |
-| 0:20 | Walk through the working example |
-| 0:30 | Exercise 1 |
-| 0:40 | Exercise 2 |
-| 0:50 | Exercise 3 |
-| 1:00 | Exercise 4 |
-| 1:15 | Exercise 5 demo + how the ACM site will use it |
+| 0:20 | Worked example 1: build the Joke Generator API live |
+| 0:35 | Worked example 2: Where's Alvin? (class calendar) |
+| 0:45 | Exercises 1 to 3 |
+| 1:05 | Exercise 4 (your own API, like the joke one) |
+| 1:20 | Exercise 5 + how the ACM site will use Google Calendar |
 | 1:30 | Done |
 
 ## Good habits

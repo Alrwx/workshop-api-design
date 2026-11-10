@@ -1,11 +1,11 @@
-# ⭐ Working example: Gator Forecast
+# Extra example: Gator Forecast (weather script)
 
 Before writing any code yourself, run and read a complete API program.
 
 ```bash
-python 00-working-example/gator_forecast.py
-python 00-working-example/gator_forecast.py --city Tampa
-python 00-working-example/gator_forecast.py --city Notarealplace
+python 00-worked-examples/weather-script/gator_forecast.py
+python 00-worked-examples/weather-script/gator_forecast.py --city Tampa
+python 00-worked-examples/weather-script/gator_forecast.py --city Notarealplace
 ```
 
 Sample output:

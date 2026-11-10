@@ -2,8 +2,8 @@
 Gator Forecast: a complete, working API program.
 
 Run it:
-    python 00-working-example/gator_forecast.py
-    python 00-working-example/gator_forecast.py --city Miami
+    python 00-worked-examples/weather-script/gator_forecast.py
+    python 00-worked-examples/weather-script/gator_forecast.py --city Miami
 
 What it does:
     1. Asks a geocoding API "where is this city?" (city name -> latitude/longitude)

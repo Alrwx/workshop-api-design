@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where's Alvin?</title>
+<style>
+  :root { --navy: #14213d; --orange: #fa6a1e; --cream: #f7f5f0; --muted: #5a6478; --blue: #2563eb; --line: #e2ded3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--cream); color: var(--navy); padding: 32px 16px; }
+  main { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); margin: 0; }
+  .sub { color: var(--muted); margin: 6px 0 28px; }
+  .status { border-radius: 24px; padding: 28px 32px; margin-bottom: 32px; color: white; background: var(--navy); }
+  .status.busy { background: var(--orange); }
+  .status .big { font-size: clamp(1.4rem, 3.5vw, 2.2rem); font-weight: 800; margin: 0 0 8px; }
+  .status .small { margin: 0; opacity: .9; font-size: 1.05rem; }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .week { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .week { grid-template-columns: 1fr; } }
+  .day { background: white; border: 2px solid var(--line); border-radius: 18px; padding: 12px; min-height: 160px; min-width: 0; }
+  .day.today { border-color: var(--orange); }
+  .day h2 { font-size: 1rem; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .day.today h2::after { content: " · today"; color: var(--orange); }
+  .event { border-left: 4px solid var(--blue); background: #eef3ff; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .event.now { border-left-color: var(--orange); background: #ffebdd; }
+  .event .time { font-size: .8rem; color: var(--muted); font-weight: 700; }
+  .event .title { font-weight: 700; margin: 2px 0; }
+  .event .where { font-size: .85rem; color: var(--muted); }
+  .empty { color: var(--muted); font-style: italic; }
+  .demo { display: inline-block; background: #fff3c4; color: #6b5300; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
+  .error { background: #fff1f0; border: 2px solid #f5c2bd; color: #8a1c13; border-radius: 18px; padding: 20px; }
+  footer { margin-top: 32px; color: var(--muted); font-size: .9rem; }
+  code { background: #ece8de; padding: 2px 6px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Where's Alvin? 🐊</h1>
+  <p class="sub">Live from Google Calendar, through our own little API. <span id="demo-badge"></span></p>
+
+  <section id="status" class="status"><p class="big">Checking the calendar…</p></section>
+  <section id="week" class="week"></section>
+
+  <footer>This page calls <code>GET /api/classes</code>. Our Flask server calls Google with the secret key, so it never reaches your browser.</footer>
+</main>
+
+<script>
+  const QUIPS_FREE = ["probably getting Starbucks at Marston", "allegedly studying", "touching grass on the Plaza of the Americas", "debugging something that worked yesterday"];
+  const QUIPS_NONE = ["No classes today. Alvin is a free gator. 🌴", "Nothing on the calendar. Do not ask what he's doing."];
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+  const fmtTime = (d) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+
+  function duration(ms) {
+    const mins = Math.round(ms / 60000);
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return h ? `${h}h ${m}m` : `${m} min`;
+  }
+
+  async function load() {
+    let data;
+    try {
+      const res = await fetch("/api/classes");
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || `status ${res.status}`);
+    } catch (err) {
+      document.getElementById("status").outerHTML =
+        `<div class="error"><b>Couldn't load the calendar.</b><br>${err.message}<br>See the Troubleshooting table in <code>exercises/05-google-calendar/SETUP.md</code>.</div>`;
+      return;
+    }
+
+    const owner = data.owner || "Alvin";
+    document.title = `Where's ${owner}?`;
+    document.getElementById("title").textContent = `Where's ${owner}? 🐊`;
+    if (data.demo) document.getElementById("demo-badge").innerHTML = `<span class="demo">Demo data: add your API key to .env for the real thing</span>`;
+
+    const events = data.events
+      .filter((e) => !e.allDay)
+      .map((e) => ({ ...e, start: new Date(e.start), end: new Date(e.end) }));
+
+    renderStatus(owner, events);
+    renderWeek(events);
+  }
+
+  function renderStatus(owner, events) {
+    const now = new Date();
+    const box = document.getElementById("status");
+    const current = events.find((e) => e.start <= now && now < e.end);
+    const nextToday = events.find((e) => e.start > now && sameDay(e.start, now));
+
+    if (current) {
+      box.className = "status busy";
+      box.innerHTML = `<p class="big">${owner} is in ${current.title} right now. Do not disturb. 📚</p>
+        <p class="small">${current.location || "Somewhere on campus"} · free in ${duration(current.end - now)}</p>`;
+    } else if (nextToday) {
+      box.className = "status";
+      box.innerHTML = `<p class="big">${owner} is free for ${duration(nextToday.start - now)}, ${pick(QUIPS_FREE)}.</p>
+        <p class="small">Next up: ${nextToday.title} at ${fmtTime(nextToday.start)}${nextToday.location ? " in " + nextToday.location : ""}</p>`;
+    } else {
+      box.className = "status";
+      const anyToday = events.some((e) => sameDay(e.start, now));
+      box.innerHTML = `<p class="big">${anyToday ? `Done with classes for today. ${owner} has clocked out. 😴` : pick(QUIPS_NONE)}</p>`;
+    }
+  }
+
+  function renderWeek(events) {
+    const week = document.getElementById("week");
+    const now = new Date();
+    week.innerHTML = "";
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const todays = events.filter((e) => sameDay(e.start, day));
+      const col = document.createElement("div");
+      col.className = "day" + (i === 0 ? " today" : "");
+      const heading = document.createElement("h2");
+      heading.textContent = day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      col.appendChild(heading);
+      if (todays.length === 0) {
+        const p = document.createElement("p");
+        p.className = "empty";
+        p.textContent = day.getDay() % 6 === 0 ? "Weekend 🏖️" : "Free day";
+        col.appendChild(p);
+      }
+      for (const e of todays) {
+        const div = document.createElement("div");
+        div.className = "event" + (e.start <= now && now < e.end ? " now" : "");
+        div.innerHTML = `<div class="time"></div><div class="title"></div><div class="where"></div>`;
+        div.querySelector(".time").textContent = `${fmtTime(e.start)} to ${fmtTime(e.end)}`;
+        div.querySelector(".title").textContent = e.title;
+        div.querySelector(".where").textContent = e.location;
+        col.appendChild(div);
+      }
+      week.appendChild(col);
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>
